@@ -177,3 +177,67 @@ exports.syncDevice = async (req, res) => {
     data: device,
   });
 };
+
+exports.syncEcal = async (req, res) => {
+  const { deviceId } = req.params;
+
+  const device = await Device.findOne({ deviceId });
+
+  if (!device) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Device not found",
+    });
+  }
+
+  const data = device.deviceData;
+  const d = new Date();
+  data.day = d.getDay();
+  data.date = d.getDate();
+  data.month = d.getMonth() + 1;
+  data.year = d.getFullYear();
+  data.hour = d.getHours();
+  data.minute = d.getMinutes();
+  data.second = d.getSeconds();
+
+  let lattitude, longitude, location;
+
+  //fetch location from database
+  //fetch weather data from openweather api
+
+  try {
+    const weatherData = await axios.get(
+      `http://api.openweathermap.org/data/3.0/onecall?lat=${lattitude}&lon=${longitude}&exclude=minutely,hourly,daily&appid=${process.env.OPEN_WEATHER_API_KEY}`
+    );
+
+    const airqualityData = await axios.get(
+      `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lattitude}&lon=${longitude}&appid=${process.env.OPEN_WEATHER_API_KEY}`
+    );
+    // console.log("weather", weatherData.data.current);
+    // console.log("air q", airqualityData.data.list[0].main.aqi);
+
+    // Possible values: 1, 2, 3, 4, 5. Where 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor.
+
+    const { temp, humidity, wind_speed } = weatherData.data.current;
+    const airquality = ["Good", "Fair", "Moderate", "Poor", "Very Poor"][
+      parseInt(airqualityData.data.list[0].main.aqi) - 1
+    ];
+
+    device.deviceData.location = location;
+    device.deviceData.temperature = temp;
+    device.deviceData.humidity = humidity;
+    device.deviceData.windspeed = wind_speed;
+    device.deviceData.airquality = airquality;
+  } catch (error) {
+    console.log(error);
+  }
+
+  console.log(device.deviceData);
+
+  await device.save();
+
+  res.status(200).json({
+    status: "success",
+    data: device,
+  });
+};
