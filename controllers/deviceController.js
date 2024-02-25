@@ -192,13 +192,19 @@ exports.syncEcal = async (req, res) => {
 
   const data = device.deviceData;
   const d = new Date();
-  data.day = d.getDay();
-  data.date = d.getDate();
-  data.month = d.getMonth() + 1;
-  data.year = d.getFullYear();
-  data.hour = d.getHours();
-  data.minute = d.getMinutes();
-  data.second = d.getSeconds();
+
+  // Convert to IST
+  const istDate = new Date(
+    d.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+
+  data.day = istDate.getDay();
+  data.date = istDate.getDate();
+  data.month = istDate.getMonth() + 1;
+  data.year = istDate.getFullYear();
+  data.hour = istDate.getHours();
+  data.minute = istDate.getMinutes();
+  data.second = istDate.getSeconds();
 
   let lattitude, longitude, location;
 
