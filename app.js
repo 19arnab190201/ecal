@@ -1,17 +1,16 @@
 const express = require("express");
-const app = express();
-const cors = require("cors");
-//regular middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-//cors middleware
-app.use(cors({ origin: true, credentials: true }));
+require("dotenv").config();
+const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
+const fileUpload = require("express-fileupload");
+
+const app = express();
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Credentials", true);
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+
   res.header(
     "Access-Control-Allow-Headers",
     "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept"
@@ -19,20 +18,28 @@ app.use(function (req, res, next) {
   next();
 });
 
-// Routes
+//Morgan middleware
+app.use(morgan("tiny"));
 
-app.get("/sync-data/:deviceId", (req, res) => {
-  const deviceId = req.params.deviceId;
-  const date = new Date();
-  res.status(200).json({
-    day: date.getDay(),
-    date: date.getDate(),
-    month: date.getMonth(),
-    year: date.getFullYear(),
-    deviceId: deviceId,
-  });
-});
+//cookie parser middleware
+app.use(cookieParser());
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  })
+);
 
+const user = require("./routes/user");
+const device = require("./routes/device");
+
+//regular middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+//MIDDLEWARE
+app.use("/api/v1", user);
+app.use("/api/v1", device);
+
+//exporting app js
 module.exports = app;
-
-//testsuccess@gocash
