@@ -141,15 +141,17 @@ exports.syncDevice = async (req, res) => {
 
   //fetch weather data from openweather api
 
+  console.log(lattitude, longitude, location);
+
   try {
     const weatherData = await axios.get(
-      `http://api.openweathermap.org/data/3.0/onecall?lat=${lattitude}&lon=${longitude}&exclude=minutely,hourly,daily&appid=${process.env.OPEN_WEATHER_API_KEY}`
+      `http://api.openweathermap.org/data/3.0/onecall?lat=${lattitude}&lon=${longitude}&exclude=minutely,hourly&appid=${process.env.OPEN_WEATHER_API_KEY}`
     );
 
     const airqualityData = await axios.get(
       `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lattitude}&lon=${longitude}&appid=${process.env.OPEN_WEATHER_API_KEY}`
     );
-    // console.log("weather", weatherData.data.current);
+    // console.log("weather", weatherData.data);
     // console.log("air q", airqualityData.data.list[0].main.aqi);
 
     // Possible values: 1, 2, 3, 4, 5. Where 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor.
@@ -160,6 +162,8 @@ exports.syncDevice = async (req, res) => {
     ];
 
     device.deviceData.location = location;
+    device.deviceData.lattitude = lattitude;
+    device.deviceData.longitude = longitude;
     device.deviceData.temperature = temp;
     device.deviceData.humidity = humidity;
     device.deviceData.windspeed = wind_speed;
@@ -208,18 +212,23 @@ exports.syncEcal = async (req, res) => {
 
   let lattitude, longitude, location;
 
+  lattitude = device.deviceData.lattitude;
+  longitude = device.deviceData.longitude;
+  location = device.deviceData.location;
+
   //fetch location from database
   //fetch weather data from openweather api
 
   try {
+    console.log(lattitude, longitude, location);
     const weatherData = await axios.get(
-      `http://api.openweathermap.org/data/3.0/onecall?lat=${lattitude}&lon=${longitude}&exclude=minutely,hourly,daily&appid=${process.env.OPEN_WEATHER_API_KEY}`
+      `http://api.openweathermap.org/data/3.0/onecall?lat=${lattitude}&lon=${longitude}&exclude=minutely,hourly&appid=${process.env.OPEN_WEATHER_API_KEY}`
     );
 
     const airqualityData = await axios.get(
       `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lattitude}&lon=${longitude}&appid=${process.env.OPEN_WEATHER_API_KEY}`
     );
-    // console.log("weather", weatherData.data.current);
+    console.log("weather", weatherData.data);
     // console.log("air q", airqualityData.data.list[0].main.aqi);
 
     // Possible values: 1, 2, 3, 4, 5. Where 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor.
@@ -234,8 +243,25 @@ exports.syncEcal = async (req, res) => {
     device.deviceData.humidity = humidity;
     device.deviceData.windspeed = wind_speed;
     device.deviceData.airquality = airquality;
+
+    const dailyForecast = weatherData.data.daily;
+
+    // Iterate through daily forecast data to find min-max temperature
+    let minTemp = Infinity;
+    let maxTemp = -Infinity;
+
+    dailyForecast.forEach((day) => {
+      const tempMin = day.temp.min;
+      const tempMax = day.temp.max;
+
+      minTemp = Math.min(minTemp, tempMin);
+      maxTemp = Math.max(maxTemp, tempMax);
+    });
+
+    device.deviceData.minTemp = minTemp;
+    device.deviceData.maxTemp = maxTemp;
   } catch (error) {
-    console.log(error);
+    // console.log(error);
   }
 
   console.log(device.deviceData);

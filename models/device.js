@@ -7,6 +7,7 @@ const deviceSchema = new mongoose.Schema({
     trim: true,
     maxlength: [50, "Device name cannot be more than 50 characters"],
   },
+
   deviceStatus: {
     type: String,
     enum: ["ACTIVE", "INACTIVE"],
@@ -37,6 +38,20 @@ const deviceSchema = new mongoose.Schema({
       type: String,
       trim: true,
       maxlength: [100, "Device location cannot be more than 100 characters"],
+    },
+    lattitude: {
+      type: Number,
+      required: [true, "Please add a lattitude"],
+    },
+    longitude: {
+      type: Number,
+      required: [true, "Please add a longitude"],
+    },
+    minTemp: {
+      type: Number,
+    },
+    maxTemp: {
+      type: Number,
     },
     temperature: {
       type: Number,
