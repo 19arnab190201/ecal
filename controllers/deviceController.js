@@ -274,6 +274,7 @@ exports.syncEcal = async (req, res) => {
     const windy = wind_speed >= 32.2 || wind_gust >= 40.2;
 
     iconData = {
+      id: weather[0].id,
       day,
       sun,
       cloudy,
