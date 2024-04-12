@@ -184,7 +184,7 @@ exports.syncDevice = async (req, res) => {
 
 exports.syncEcal = async (req, res) => {
   const { deviceId } = req.params;
-
+  let iconData = {};
   const device = await Device.findOne({ deviceId });
 
   if (!device) {
@@ -257,19 +257,42 @@ exports.syncEcal = async (req, res) => {
       minTemp = Math.min(minTemp, tempMin);
       maxTemp = Math.max(maxTemp, tempMax);
     });
-
     device.deviceData.minTemp = minTemp;
     device.deviceData.maxTemp = maxTemp;
+    // console.log(weatherData.data);
+
+    const { weather, dt, sunrise, sunset, clouds, wind_gust } =
+      weatherData.data.current;
+
+    // OpenWeatherMap indicates sun is up with d otherwise n for night
+    const day = weather[0].icon.endsWith("d");
+    // sun is out if current time is after sunrise but before sunset
+    const sun = dt >= sunrise && dt < sunset;
+    // partly cloudy / partly sunny
+    const cloudy = clouds > 60.25;
+    // windy conditions
+    const windy = wind_speed >= 32.2 || wind_gust >= 40.2;
+
+    iconData = {
+      day,
+      sun,
+      cloudy,
+      windy,
+      moon: !day && !sun,
+    };
+
+    console.log(device.deviceData);
   } catch (error) {
     // console.log(error);
   }
-
-  console.log(device.deviceData);
 
   await device.save();
 
   res.status(200).json({
     status: "success",
-    data: device,
+    data: {
+      ...device._doc,
+      iconData,
+    },
   });
 };
